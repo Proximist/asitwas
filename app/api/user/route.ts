@@ -55,6 +55,21 @@ export async function POST(req: NextRequest) {
                 invitedBy: true,
                 level: true,
                 transactionStatus: true,
+                points: true,
+                introSeen: true,
+                paymentMethod: true,
+                paymentAddress: true,
+                isUpload: true,
+                imageUrl: true,
+                savedImages: true,
+                piAmount: true,
+                finalpis: true,
+                baseprice: true,
+                piaddress: true,// New field for Pi wallet address
+                istransaction: true,
+                createdAt: true,
+                updatedAt: true,
+  
               }
         })
 
