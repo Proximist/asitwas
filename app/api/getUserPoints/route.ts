@@ -1,4 +1,3 @@
-// app/api/getUserPoints/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
@@ -14,11 +13,13 @@ export async function POST(req: NextRequest) {
         username: cleanUsername
       },
       select: {
-        totalPoints: true
+        username: true,
+        totalPoints: true,
+        invitePoints: true
       }
     });
 
-    return NextResponse.json(user || { totalPoints: 0 });
+    return NextResponse.json(user || { totalPoints: 0, invitePoints: 0 });
   } catch (error) {
     console.error('Error fetching user points:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
