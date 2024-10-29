@@ -75,7 +75,7 @@ export default function InvitePage() {
     setIsLoading(true);
     try {
       // Fetch basic user data
-      const response = await fetch('/api/user', {
+      const response = await fetch('/api/member', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
