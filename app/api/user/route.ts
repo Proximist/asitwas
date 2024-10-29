@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -41,17 +42,30 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid user data' }, { status: 400 })
         }
 
+        const select = {
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            level: true,
+            piAmount: true,
+            transactionStatus: true,
+            totalPoints: true,
+            introSeen: true,
+            paymentMethod: true,
+            paymentAddress: true,
+            isUpload: true,
+            imageUrl: true,
+            savedImages: true,
+            finalpis: true,
+            baseprice: true,
+            piaddress: true,// New field for Pi wallet address
+            istransaction: true,
+        }
+
         let user = await prisma.user.findUnique({
             where: { telegramId: userData.id },
-            select: {
-                telegramId: true,
-                username: true,
-                firstName: true,
-                lastName: true,
-                level: true,
-                piAmount: true,
-                transactionStatus: true
-            }
+            select
         })
 
         if (!user) {
@@ -64,15 +78,7 @@ export async function POST(req: NextRequest) {
                     level: 1,
                     transactionStatus: []
                 },
-                select: {
-                    telegramId: true,
-                    username: true,
-                    firstName: true,
-                    lastName: true,
-                    level: true,
-                    piAmount: true,
-                    transactionStatus: true
-                }
+                select
             })
         }
 
@@ -91,15 +97,7 @@ export async function POST(req: NextRequest) {
                         push: 'processing'
                     }
                 },
-                select: {
-                    telegramId: true,
-                    username: true,
-                    firstName: true,
-                    lastName: true,
-                    level: true,
-                    piAmount: true,
-                    transactionStatus: true
-                }
+                select
             })
         }
 
@@ -114,15 +112,7 @@ export async function POST(req: NextRequest) {
                     data: { 
                         transactionStatus: newStatuses
                     },
-                    select: {
-                        telegramId: true,
-                        username: true,
-                        firstName: true,
-                        lastName: true,
-                        level: true,
-                        piAmount: true,
-                        transactionStatus: true
-                    }
+                    select
                 })
             }
         }
@@ -134,15 +124,7 @@ export async function POST(req: NextRequest) {
                 data: { 
                     level: userData.level
                 },
-                select: {
-                    telegramId: true,
-                    username: true,
-                    firstName: true,
-                    lastName: true,
-                    level: true,
-                    piAmount: true,
-                    transactionStatus: true
-                }
+                select
             })
         }
 
