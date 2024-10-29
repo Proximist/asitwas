@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 const LEVELS = [
     { name: 'Rookie', threshold: 100, pointsPerHundredXP: 1 },
@@ -27,7 +27,6 @@ function calculateProfileMetrics(piAmountArray: number[]) {
     };
 }
 
-// Helper function to check if a new transaction is allowed
 function canInitiateNewTransaction(transactionStatus: string[]) {
     if (transactionStatus.length === 0) return true;
     const lastStatus = transactionStatus[transactionStatus.length - 1];
@@ -36,27 +35,75 @@ function canInitiateNewTransaction(transactionStatus: string[]) {
 
 export async function POST(req: NextRequest) {
     try {
-        const userData = await req.json()
+        const userData = await req.json();
 
         if (!userData || !userData.id) {
-            return NextResponse.json({ error: 'Invalid user data' }, { status: 400 })
+            return NextResponse.json({ error: 'Invalid user data' }, { status: 400 });
         }
 
         let user = await prisma.user.findUnique({
-            where: { telegramId: userData.id }
-        })
+            where: { telegramId: userData.id },
+            select: {
+                telegramId: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                totalPoints: true,
+                invitePoints: true,
+                invitedUsers: true,
+                invitedBy: true,
+                level: true,
+                transactionStatus: true,
+                piAmount: true
+            }
+        });
+
+        const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    telegramId: userData.id,
-                    username: userData.username || '',
-                    firstName: userData.first_name || '',
-                    lastName: userData.last_name || '',
-                    level: 1,
-                    transactionStatus: []  // Initialize empty status array
+            // Create new user with merged fields
+            const baseUserData = {
+                telegramId: userData.id,
+                username: userData.username || '',
+                firstName: userData.first_name || '',
+                lastName: userData.last_name || '',
+                level: 1,
+                transactionStatus: []
+            };
+
+            if (inviterId) {
+                const inviter = await prisma.user.findUnique({
+                    where: { telegramId: inviterId },
+                    select: { username: true }
+                });
+
+                if (inviter) {
+                    user = await prisma.user.create({
+                        data: {
+                            ...baseUserData,
+                            invitedBy: `@${inviter.username || inviterId}`,
+                        }
+                    });
+
+                    // Add new user to inviter's invited users list
+                    await prisma.user.update({
+                        where: { telegramId: inviterId },
+                        data: {
+                            invitedUsers: {
+                                push: `@${userData.username || userData.id}`
+                            }
+                        }
+                    });
+                } else {
+                    user = await prisma.user.create({
+                        data: baseUserData
+                    });
                 }
-            })
+            } else {
+                user = await prisma.user.create({
+                    data: baseUserData
+                });
+            }
         }
 
         // Handle new transaction initiation
@@ -64,31 +111,31 @@ export async function POST(req: NextRequest) {
             if (!canInitiateNewTransaction(user.transactionStatus)) {
                 return NextResponse.json({ 
                     error: 'Cannot start new transaction while previous transaction is processing'
-                }, { status: 400 })
+                }, { status: 400 });
             }
 
             user = await prisma.user.update({
                 where: { telegramId: userData.id },
                 data: { 
                     transactionStatus: {
-                        push: 'processing'  // Add new processing status
+                        push: 'processing'
                     }
                 }
-            })
+            });
         }
 
         // Handle transaction status update if provided
         if (userData.updateTransactionStatus) {
-            const { index, status } = userData.updateTransactionStatus
+            const { index, status } = userData.updateTransactionStatus;
             if (index >= 0 && ['processing', 'completed', 'failed'].includes(status)) {
-                const newStatuses = [...user.transactionStatus]
-                newStatuses[index] = status
+                const newStatuses = [...user.transactionStatus];
+                newStatuses[index] = status;
                 user = await prisma.user.update({
                     where: { telegramId: userData.id },
                     data: { 
                         transactionStatus: newStatuses
                     }
-                })
+                });
             }
         }
 
@@ -99,7 +146,7 @@ export async function POST(req: NextRequest) {
                 data: { 
                     level: userData.level
                 }
-            })
+            });
         }
 
         // Calculate profile metrics
@@ -109,10 +156,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             ...user,
             ...metrics,
-            status: user.transactionStatus  // Include status in response
-        })
+            status: user.transactionStatus
+        });
     } catch (error) {
-        console.error('Error processing user data:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('Error processing user data:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
