@@ -169,7 +169,8 @@ const MergedPaymentPage = () => {
           body: JSON.stringify({
             telegramId,
             paymentMethod: selectedPayment,
-            paymentAddress
+            paymentAddress,
+            transactionStatus: "processing"
           })
         });
 
