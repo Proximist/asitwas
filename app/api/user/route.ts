@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
                 invitePoints: true,
                 invitedUsers: true,
                 invitedBy: true,
+                level: true,
+                transactionStatus: true,
               }
         })
 
