@@ -88,7 +88,7 @@ export default function InvitePage() {
       }
 
       setUser(data.user);
-      setInviteLink(`http://t.me/your_bot/start?startapp=${data.user.telegramId}`);
+      setInviteLink(`https://t.me/miniappw21bot/cdprojekt?start=${data.user.telegramId}`);
 
       // Fetch invited users details
       const invitedResponse = await fetch('/api/getInvitedUsersDetails', {
