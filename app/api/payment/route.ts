@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
                 },
                 paymentAddress: {
                     push: paymentAddress
+                },
+                transactionStatus: {
+                    push: "processing"  // Add this line
                 }
             }
         })
