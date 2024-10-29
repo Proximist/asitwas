@@ -43,37 +43,8 @@ export async function POST(req: NextRequest) {
         }
 
         let user = await prisma.user.findUnique({
-            where: { telegramId: userData.id },
-            select: {
-                telegramId: true,
-                username: true,
-                firstName: true,
-                lastName: true,
-                totalPoints: true,
-                invitePoints: true,
-                invitedUsers: true,
-                invitedBy: true,
-                level: true,
-                transactionStatus: true,
-                points: true,
-                introSeen: true,
-                paymentMethod: true,
-                paymentAddress: true,
-                isUpload: true,
-                imageUrl: true,
-                savedImages: true,
-                piAmount: true,
-                finalpis: true,
-                baseprice: true,
-                piaddress: true,// New field for Pi wallet address
-                istransaction: true,
-                createdAt: true,
-                updatedAt: true,
-  
-              }
+            where: { telegramId: userData.id }
         })
-
-        const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
 
         if (!user) {
             user = await prisma.user.create({
@@ -84,58 +55,9 @@ export async function POST(req: NextRequest) {
                     lastName: userData.last_name || '',
                     level: 1,
                     transactionStatus: []  // Initialize empty status array
-
                 }
-
             })
-
-        if (inviterId) {
-          const inviter = await prisma.user.findUnique({
-            where: { telegramId: inviterId },
-            select: { username: true }
-            });
-
-            if (inviter) {
-              user = await prisma.user.create({
-                data: {
-                  telegramId: userData.id,
-                  username: userData.username || '',
-                  firstName: userData.first_name || '',
-                  lastName: userData.last_name || '',
-                  invitedBy: `@${inviter.username || inviterId}`,
-                }
-            });
-
-            // Add new user to inviter's invited users list
-             await prisma.user.update({
-               where: { telegramId: inviterId },
-               data: {
-                 invitedUsers: {
-                   push: `@${userData.username || userData.id}`
-                 }
-               }
-            });
-          } else {
-            user = await prisma.user.create({
-              data: {
-                telegramId: userData.id,
-                username: userData.username || '',
-                firstName: userData.first_name || '',
-                lastName: userData.last_name || '',
-              }
-            });
-          }
-        } else {
-          user = await prisma.user.create({
-            data: {
-              telegramId: userData.id,
-              username: userData.username || '',
-              firstName: userData.first_name || '',
-              lastName: userData.last_name || '',
-            }
-          });
         }
-      }
 
         // Handle new transaction initiation
         if (userData.newTransaction) {
