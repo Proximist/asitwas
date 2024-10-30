@@ -36,7 +36,7 @@ export default function Invite() {
       const initDataUnsafe = tg.initDataUnsafe || {}
 
       if (initDataUnsafe.user) {
-        fetch('/api/user', {
+        fetch('/api/invite', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
