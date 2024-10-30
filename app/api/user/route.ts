@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
                 level: true,
                 piAmount: true,
                 transactionStatus: true,
+                introSeen: true,  // Add this line
             }
         });
 
@@ -76,7 +77,8 @@ export async function POST(req: NextRequest) {
                             invitedBy: `@${inviterInfo.username || inviterId}`,
                             level: 1,
                             points: 0,
-                            transactionStatus: []
+                            transactionStatus: [],
+                            introSeen: false  // Add this line
                         }
                     });
 
@@ -100,7 +102,8 @@ export async function POST(req: NextRequest) {
                             firstName: userData.first_name || '',
                             lastName: userData.last_name || '',
                             level: 1,
-                            transactionStatus: []
+                            transactionStatus: [],
+                            introSeen: false  // Add this line
                         }
                     });
                 }
@@ -112,7 +115,8 @@ export async function POST(req: NextRequest) {
                         firstName: userData.first_name || '',
                         lastName: userData.last_name || '',
                         level: 1,
-                        transactionStatus: []
+                        transactionStatus: [],
+                        introSeen: false  // Add this line
                     }
                 });
             }
