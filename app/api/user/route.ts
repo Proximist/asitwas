@@ -41,22 +41,34 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid user data' }, { status: 400 });
         }
 
-        let user = await prisma.user.findUnique({
-            where: { telegramId: userData.id },
-            select: {
-                telegramId: true,
-                username: true,
-                firstName: true,
-                lastName: true,
-                points: true,
-                invitedUsers: true,
-                invitedBy: true,
-                level: true,
-                piAmount: true,
-                transactionStatus: true,
-                introSeen: true,
-            }
-        });
+        const select = {
+          points: true,
+          invitedUsers: true,
+          invitedBy: true,
+          telegramId: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          level: true,
+          piAmount: true,
+          transactionStatus: true,
+          totalPoints: true,
+          introSeen: true,
+          paymentMethod: true,
+          paymentAddress: true,
+          isUpload: true,
+          imageUrl: true,
+          savedImages: true,
+          finalpis: true,
+          baseprice: true,
+          piaddress: true,// New field for Pi wallet address
+          istransaction: true,
+      }
+
+      let user = await prisma.user.findUnique({
+          where: { telegramId: userData.id },
+          select
+      })
 
         const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
 
@@ -77,14 +89,17 @@ export async function POST(req: NextRequest) {
                             invitedBy: `@${inviterInfo.username || inviterId}`,
                             level: 1,
                             points: 0,
-                            transactionStatus: [],
-                            introSeen: false
-                        }
+                            transactionStatus: []
+                        },
+                        select
                     });
 
+                    // Make API call to increase-points route instead of directly updating points
                     await fetch('/api/increase-points', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
                         body: JSON.stringify({
                             telegramId: inviterId,
                             invitedUserId: userData.id,
@@ -99,76 +114,72 @@ export async function POST(req: NextRequest) {
                             firstName: userData.first_name || '',
                             lastName: userData.last_name || '',
                             level: 1,
-                            transactionStatus: [],
-                            introSeen: false
-                        }
+                            transactionStatus: []
+                        },
+                        select
                     });
                 }
-            } else {
-                user = await prisma.user.create({
-                    data: {
-                        telegramId: userData.id,
-                        username: userData.username || '',
-                        firstName: userData.first_name || '',
-                        lastName: userData.last_name || '',
-                        level: 1,
-                        transactionStatus: [],
-                        introSeen: userData.introSeen || false
-                    }
-                });
             }
-        } else if (userData.introSeen) {
-            user = await prisma.user.update({
-                where: { telegramId: userData.id },
-                data: { introSeen: true },
-            });
         }
 
+        // Handle new transaction initiation
         if (userData.newTransaction) {
             if (!canInitiateNewTransaction(user.transactionStatus)) {
-                return NextResponse.json({
+                return NextResponse.json({ 
                     error: 'Cannot start new transaction while previous transaction is processing'
-                }, { status: 400 });
+                }, { status: 400 })
             }
 
             user = await prisma.user.update({
                 where: { telegramId: userData.id },
-                data: {
+                data: { 
                     transactionStatus: {
                         push: 'processing'
                     }
                 },
-            });
+                select
+            })
         }
 
+        // Handle transaction status update if provided
         if (userData.updateTransactionStatus) {
-            const { index, status } = userData.updateTransactionStatus;
+            const { index, status } = userData.updateTransactionStatus
             if (index >= 0 && ['processing', 'completed', 'failed'].includes(status)) {
-                const newStatuses = [...user.transactionStatus];
-                newStatuses[index] = status;
+                const newStatuses = [...user.transactionStatus]
+                newStatuses[index] = status
                 user = await prisma.user.update({
                     where: { telegramId: userData.id },
-                    data: { transactionStatus: newStatuses },
-                });
+                    data: { 
+                        transactionStatus: newStatuses
+                    },
+                    select
+                })
             }
         }
 
+        // Handle level update if requested
         if (userData.updateLevel) {
             user = await prisma.user.update({
                 where: { telegramId: userData.id },
-                data: { level: userData.level },
+                data: { 
+                    level: userData.level
+                },
+                select
+            })
+        }
+
+        let inviterInfo = null;
+        if (inviterId) {
+            inviterInfo = await prisma.user.findUnique({
+                where: { telegramId: inviterId },
+                select: { username: true, firstName: true, lastName: true }
             });
         }
 
-        const inviterInfo = inviterId
-            ? await prisma.user.findUnique({
-                where: { telegramId: inviterId },
-                select: { username: true, firstName: true, lastName: true }
-            })
-            : null;
-
+        // Calculate profile metrics
         const metrics = calculateProfileMetrics(user.piAmount);
 
+        // Return combined response with all data
         return NextResponse.json({
             user,
             inviterInfo,
