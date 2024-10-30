@@ -42,31 +42,33 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid user data' }, { status: 400 })
         }
 
-        const select = {
-            telegramId: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            level: true,
-            piAmount: true,
-            transactionStatus: true,
-            totalPoints: true,
-            introSeen: true,
-            paymentMethod: true,
-            paymentAddress: true,
-            isUpload: true,
-            imageUrl: true,
-            savedImages: true,
-            finalpis: true,
-            baseprice: true,
-            piaddress: true,// New field for Pi wallet address
-            istransaction: true,
-        }
-
         let user = await prisma.user.findUnique({
             where: { telegramId: userData.id },
-            select
-        })
+            select: {
+              telegramId: true,
+              username: true,
+              points: true,
+              invitedUsers: true,
+              invitedBy: true,
+              firstName: true,
+              lastName: true,
+              level: true,
+              piAmount: true,
+              transactionStatus: true,
+              totalPoints: true,
+              introSeen: true,
+              paymentMethod: true,
+              paymentAddress: true,
+              isUpload: true,
+              imageUrl: true,
+              savedImages: true,
+              finalpis: true,
+              baseprice: true,
+              piaddress: true,// New field for Pi wallet address
+              istransaction: true,
+            }
+          });
+
 
         if (!user) {
             user = await prisma.user.create({
@@ -78,7 +80,6 @@ export async function POST(req: NextRequest) {
                     level: 1,
                     transactionStatus: []
                 },
-                select
             })
         }
 
@@ -97,7 +98,6 @@ export async function POST(req: NextRequest) {
                         push: 'processing'
                     }
                 },
-                select
             })
         }
 
@@ -112,7 +112,6 @@ export async function POST(req: NextRequest) {
                     data: { 
                         transactionStatus: newStatuses
                     },
-                    select
                 })
             }
         }
@@ -124,7 +123,6 @@ export async function POST(req: NextRequest) {
                 data: { 
                     level: userData.level
                 },
-                select
             })
         }
 
