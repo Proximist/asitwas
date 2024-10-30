@@ -6,7 +6,7 @@ import './invite.css';
 declare global {
   interface Window {
     Telegram?: {
-      WebApp: any;
+      WebApp: WebApp
     }
   }
 }
