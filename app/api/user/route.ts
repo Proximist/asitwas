@@ -78,7 +78,6 @@ export async function POST(req: NextRequest) {
                             firstName: userData.first_name || '',
                             lastName: userData.last_name || '',
                             invitedBy: `@${inviterInfo.username || inviterId}`,
-                            isOnline: true,
                             level: 1,
                             points: 0,
                             transactionStatus: []
@@ -104,8 +103,6 @@ export async function POST(req: NextRequest) {
                             username: userData.username || '',
                             firstName: userData.first_name || '',
                             lastName: userData.last_name || '',
-                            isOnline: true,
-                            currentTime: new Date(),
                             level: 1,
                             transactionStatus: []
                         }
@@ -118,8 +115,6 @@ export async function POST(req: NextRequest) {
                         username: userData.username || '',
                         firstName: userData.first_name || '',
                         lastName: userData.last_name || '',
-                        isOnline: true,
-                        currentTime: new Date(),
                         level: 1,
                         transactionStatus: []
                     }
