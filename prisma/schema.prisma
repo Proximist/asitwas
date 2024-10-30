@@ -14,10 +14,8 @@ model User {
   firstName      String?
   lastName       String?
   points        Int       @default(0)
-  totalPoints   Int       @default(0)
-  invitePoints  Int       @default(0)
-  invitedUsers  String[]  @default([])
-  invitedBy     String?   @default("")
+  invitedUsers  String[] @default([])
+  invitedBy     String?  @default("")
   level          Int       @default(1)
   introSeen      Boolean   @default(false)
   paymentMethod  String[]  @default([])  // Changed to array
