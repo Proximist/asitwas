@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
             level: true,
             piAmount: true,
             transactionStatus: true,
-            totalPoints: true,
             introSeen: true,
             paymentMethod: true,
             paymentAddress: true,
