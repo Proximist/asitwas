@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
                 level: true,
                 piAmount: true,
                 transactionStatus: true,
-                introSeen: true,  // Add this line
+                introSeen: true,
             }
         });
 
@@ -78,16 +78,13 @@ export async function POST(req: NextRequest) {
                             level: 1,
                             points: 0,
                             transactionStatus: [],
-                            introSeen: false  // Add this line
+                            introSeen: false
                         }
                     });
 
-                    // Make API call to increase-points route instead of directly updating points
                     await fetch('/api/increase-points', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             telegramId: inviterId,
                             invitedUserId: userData.id,
@@ -103,84 +100,81 @@ export async function POST(req: NextRequest) {
                             lastName: userData.last_name || '',
                             level: 1,
                             transactionStatus: [],
-                            introSeen: false  // Add this line
+                            introSeen: false
                         }
                     });
                 }
             } else {
-              // Update the introSeen flag if the user has already seen the intro
-              if (userData.introSeen) {
-                  user = await prisma.user.update({
-                      where: { telegramId: userData.id },
-                      data: {
-                          introSeen: true,
-                      },
-                  });
-              }
-          }
+                user = await prisma.user.create({
+                    data: {
+                        telegramId: userData.id,
+                        username: userData.username || '',
+                        firstName: userData.first_name || '',
+                        lastName: userData.last_name || '',
+                        level: 1,
+                        transactionStatus: [],
+                        introSeen: userData.introSeen || false
+                    }
+                });
+            }
+        } else if (userData.introSeen) {
+            user = await prisma.user.update({
+                where: { telegramId: userData.id },
+                data: { introSeen: true },
+            });
+        }
 
-        // Handle new transaction initiation
         if (userData.newTransaction) {
             if (!canInitiateNewTransaction(user.transactionStatus)) {
-                return NextResponse.json({ 
+                return NextResponse.json({
                     error: 'Cannot start new transaction while previous transaction is processing'
-                }, { status: 400 })
+                }, { status: 400 });
             }
 
             user = await prisma.user.update({
                 where: { telegramId: userData.id },
-                data: { 
+                data: {
                     transactionStatus: {
                         push: 'processing'
                     }
                 },
-            })
-        }
-
-        // Handle transaction status update if provided
-        if (userData.updateTransactionStatus) {
-            const { index, status } = userData.updateTransactionStatus
-            if (index >= 0 && ['processing', 'completed', 'failed'].includes(status)) {
-                const newStatuses = [...user.transactionStatus]
-                newStatuses[index] = status
-                user = await prisma.user.update({
-                    where: { telegramId: userData.id },
-                    data: { 
-                        transactionStatus: newStatuses
-                    },
-                })
-            }
-        }
-
-        // Handle level update if requested
-        if (userData.updateLevel) {
-            user = await prisma.user.update({
-                where: { telegramId: userData.id },
-                data: { 
-                    level: userData.level
-                },
-            })
-        }
-
-        let inviterInfo = null;
-        if (inviterId) {
-            inviterInfo = await prisma.user.findUnique({
-                where: { telegramId: inviterId },
-                select: { username: true, firstName: true, lastName: true }
             });
         }
 
-        // Calculate profile metrics
+        if (userData.updateTransactionStatus) {
+            const { index, status } = userData.updateTransactionStatus;
+            if (index >= 0 && ['processing', 'completed', 'failed'].includes(status)) {
+                const newStatuses = [...user.transactionStatus];
+                newStatuses[index] = status;
+                user = await prisma.user.update({
+                    where: { telegramId: userData.id },
+                    data: { transactionStatus: newStatuses },
+                });
+            }
+        }
+
+        if (userData.updateLevel) {
+            user = await prisma.user.update({
+                where: { telegramId: userData.id },
+                data: { level: userData.level },
+            });
+        }
+
+        const inviterInfo = inviterId
+            ? await prisma.user.findUnique({
+                where: { telegramId: inviterId },
+                select: { username: true, firstName: true, lastName: true }
+            })
+            : null;
+
         const metrics = calculateProfileMetrics(user.piAmount);
 
-        // Return combined response with all data
         return NextResponse.json({
             user,
             inviterInfo,
             ...metrics,
             status: user.transactionStatus
         });
-      }
 
     } catch (error) {
         console.error('Error processing user data:', error);
