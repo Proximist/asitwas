@@ -1,22 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
     try {
-        const { telegramId } = await req.json()
+        const { inviterId } = await req.json();
 
-        if (!telegramId) {
-            return NextResponse.json({ error: 'Invalid telegramId' }, { status: 400 })
+        if (!inviterId) {
+            return NextResponse.json({ error: 'Invalid inviterId' }, { status: 400 });
         }
 
         const updatedUser = await prisma.user.update({
-            where: { telegramId },
-            data: { points: { increment: 1 } }
-        })
+            where: { telegramId: inviterId },
+            data: { points: { increment: 2500 } }
+        });
 
-        return NextResponse.json({ success: true, points: updatedUser.points })
+        return NextResponse.json({ success: true, points: updatedUser.points });
     } catch (error) {
-        console.error('Error increasing points:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('Error increasing points:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
