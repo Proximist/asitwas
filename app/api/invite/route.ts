@@ -1,96 +1,50 @@
-// root/app/api/invite/route.ts
-
+// File: root/app/api/invite/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   try {
-    const userData = await req.json();
+    const inviteData = await req.json();
 
-    if (!userData || !userData.id) {
-      return NextResponse.json({ error: 'Invalid user data' }, { status: 400 });
+    // Validate incoming data
+    if (!inviteData || !inviteData.inviterId || !inviteData.inviteeId) {
+      return NextResponse.json({ error: 'Invalid invite data' }, { status: 400 });
     }
 
-    const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
-
-    // First, check if user exists in the main system
-    let user = await prisma.user.findUnique({
-      where: { telegramId: userData.id },
-      select: {
-        telegramId: true,
-        username: true,
-        firstName: true,
-        lastName: true,
-        points: true,
-        invitedUsers: true,
-        invitedBy: true,
-      }
+    // Check if the inviter exists
+    const inviter = await prisma.user.findUnique({
+      where: { telegramId: inviteData.inviterId },
     });
 
-    if (!user) {
-      // If user doesn't exist, let's create them
-      if (inviterId) {
-        const inviterInfo = await prisma.user.findUnique({
-          where: { telegramId: inviterId },
-          select: { username: true }
-        });
-
-        if (inviterInfo) {
-          user = await prisma.user.create({
-            data: {
-              telegramId: userData.id,
-              username: userData.username || '',
-              firstName: userData.first_name || '',
-              lastName: userData.last_name || '',
-              invitedBy: `@${inviterInfo.username || inviterId}`,
-            }
-          });
-
-          // Award points to the inviter
-          await prisma.user.update({
-            where: { telegramId: inviterId },
-            data: {
-              invitedUsers: {
-                push: `@${userData.username || userData.id}`
-              },
-              points: {
-                increment: 2500
-              }
-            }
-          });
-        } else {
-          user = await prisma.user.create({
-            data: {
-              telegramId: userData.id,
-              username: userData.username || '',
-              firstName: userData.first_name || '',
-              lastName: userData.last_name || '',
-            }
-          });
-        }
-      } else {
-        user = await prisma.user.create({
-          data: {
-            telegramId: userData.id,
-            username: userData.username || '',
-            firstName: userData.first_name || '',
-            lastName: userData.last_name || '',
-          }
-        });
-      }
+    if (!inviter) {
+      return NextResponse.json({ error: 'Inviter not found' }, { status: 404 });
     }
 
-    let inviterInfo = null;
-    if (inviterId) {
-      inviterInfo = await prisma.user.findUnique({
-        where: { telegramId: inviterId },
-        select: { username: true, firstName: true, lastName: true }
-      });
-    }
+    // Create a new invite record
+    const invite = await prisma.invite.create({
+      data: {
+        inviterId: inviteData.inviterId,
+        inviteeId: inviteData.inviteeId,
+        createdAt: new Date(),
+      },
+    });
 
-    return NextResponse.json({ user, inviterInfo });
+    // Update the inviter's points and invited users list
+    await prisma.user.update({
+      where: { telegramId: inviteData.inviterId },
+      data: {
+        points: {
+          increment: 2500, // Award points for sending an invite
+        },
+        invitedUsers: {
+          push: inviteData.inviteeId, // Add invitee to the inviter's list
+        },
+      },
+    });
+
+    return NextResponse.json({ invite }, { status: 201 });
   } catch (error) {
-    console.error('Error processing invite data:', error);
+    console.error('Error processing invite:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
