@@ -108,19 +108,16 @@ export async function POST(req: NextRequest) {
                     });
                 }
             } else {
-                user = await prisma.user.create({
-                    data: {
-                        telegramId: userData.id,
-                        username: userData.username || '',
-                        firstName: userData.first_name || '',
-                        lastName: userData.last_name || '',
-                        level: 1,
-                        transactionStatus: [],
-                        introSeen: false  // Add this line
-                    }
-                });
-            }
-        }
+              // Update the introSeen flag if the user has already seen the intro
+              if (userData.introSeen) {
+                  user = await prisma.user.update({
+                      where: { telegramId: userData.id },
+                      data: {
+                          introSeen: true,
+                      },
+                  });
+              }
+          }
 
         // Handle new transaction initiation
         if (userData.newTransaction) {
@@ -183,6 +180,7 @@ export async function POST(req: NextRequest) {
             ...metrics,
             status: user.transactionStatus
         });
+      }
 
     } catch (error) {
         console.error('Error processing user data:', error);
