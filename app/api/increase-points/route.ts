@@ -1,22 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+// route.ts (increase-points route)
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
     try {
-        const { inviterId } = await req.json();
+        const { telegramId, invitedUserId, invitedUsername } = await req.json()
 
-        if (!inviterId) {
-            return NextResponse.json({ error: 'Invalid inviterId' }, { status: 400 });
+        if (!telegramId) {
+            return NextResponse.json({ error: 'Invalid telegramId' }, { status: 400 })
         }
 
-        const updatedUser = await prisma.user.update({
-            where: { telegramId: inviterId },
-            data: { points: { increment: 2500 } }
-        });
+        // If this is an invite points increase
+        if (invitedUserId && invitedUsername) {
+            const updatedUser = await prisma.user.update({
+                where: { telegramId },
+                data: {
+                    invitedUsers: {
+                        push: `@${invitedUsername || invitedUserId}`
+                    },
+                    points: {
+                        increment: 2500
+                    }
+                }
+            })
+            return NextResponse.json({ success: true, points: updatedUser.points })
+        }
 
-        return NextResponse.json({ success: true, points: updatedUser.points });
+        // Regular points increase
+        const updatedUser = await prisma.user.update({
+            where: { telegramId },
+            data: { points: { increment: 1 } }
+        })
+
+        return NextResponse.json({ success: true, points: updatedUser.points })
     } catch (error) {
-        console.error('Error increasing points:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error('Error increasing points:', error)
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
