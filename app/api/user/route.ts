@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
             piaddress: true,
             istransaction: true,
             invitedUsers: true,
-            invitedBy: true
+            invitedBy: true,
+            points: true
         }
 
         // Get inviter ID if present
