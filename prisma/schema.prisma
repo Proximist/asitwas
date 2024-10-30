@@ -31,6 +31,8 @@ model User {
   transactionStatus String[] @default(["processing"])
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  invitesSent    Invite[] @relation("Inviter") // Invites sent by this user
+  invitesReceived Invite[] @relation("Invitee") // Invites received by this user
 }
 
 model Invite {
