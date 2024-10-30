@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
             if (inviterId) {
                 const inviter = await prisma.user.findUnique({
                     where: { telegramId: inviterId },
-                    select: { username: true }
+                    select: { username: true, firstName: true, lastName: true }
                 });
 
                 if (inviter) {
