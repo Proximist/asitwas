@@ -42,33 +42,33 @@ export async function POST(req: NextRequest) {
         }
 
         const select = {
-          points: true,
-          invitedUsers: true,
-          invitedBy: true,
-          telegramId: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          level: true,
-          piAmount: true,
-          transactionStatus: true,
-          totalPoints: true,
-          introSeen: true,
-          paymentMethod: true,
-          paymentAddress: true,
-          isUpload: true,
-          imageUrl: true,
-          savedImages: true,
-          finalpis: true,
-          baseprice: true,
-          piaddress: true,// New field for Pi wallet address
-          istransaction: true,
-      }
+            points: true,
+            invitedUsers: true,
+            invitedBy: true,
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            level: true,
+            piAmount: true,
+            transactionStatus: true,
+            totalPoints: true,
+            introSeen: true,
+            paymentMethod: true,
+            paymentAddress: true,
+            isUpload: true,
+            imageUrl: true,
+            savedImages: true,
+            finalpis: true,
+            baseprice: true,
+            piaddress: true, // New field for Pi wallet address
+            istransaction: true
+        };
 
-      let user = await prisma.user.findUnique({
-          where: { telegramId: userData.id },
-          select
-      })
+        let user = await prisma.user.findUnique({
+            where: { telegramId: userData.id },
+            select
+        });
 
         const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
 
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Handle new transaction initiation
-        if (userData.newTransaction) {
+        if (userData.newTransaction && user) {
             if (!canInitiateNewTransaction(user.transactionStatus)) {
                 return NextResponse.json({ 
                     error: 'Cannot start new transaction while previous transaction is processing'
@@ -138,34 +138,34 @@ export async function POST(req: NextRequest) {
                     }
                 },
                 select
-            })
+            });
         }
 
         // Handle transaction status update if provided
-        if (userData.updateTransactionStatus) {
-            const { index, status } = userData.updateTransactionStatus
+        if (userData.updateTransactionStatus && user) {
+            const { index, status } = userData.updateTransactionStatus;
             if (index >= 0 && ['processing', 'completed', 'failed'].includes(status)) {
-                const newStatuses = [...user.transactionStatus]
-                newStatuses[index] = status
+                const newStatuses = [...user.transactionStatus];
+                newStatuses[index] = status;
                 user = await prisma.user.update({
                     where: { telegramId: userData.id },
                     data: { 
                         transactionStatus: newStatuses
                     },
                     select
-                })
+                });
             }
         }
 
         // Handle level update if requested
-        if (userData.updateLevel) {
+        if (userData.updateLevel && user) {
             user = await prisma.user.update({
                 where: { telegramId: userData.id },
                 data: { 
                     level: userData.level
                 },
                 select
-            })
+            });
         }
 
         let inviterInfo = null;
@@ -177,14 +177,14 @@ export async function POST(req: NextRequest) {
         }
 
         // Calculate profile metrics
-        const metrics = calculateProfileMetrics(user.piAmount);
+        const metrics = calculateProfileMetrics(user?.piAmount || []);
 
         // Return combined response with all data
         return NextResponse.json({
             user,
             inviterInfo,
             ...metrics,
-            status: user.transactionStatus
+            status: user?.transactionStatus || []
         });
 
     } catch (error) {
