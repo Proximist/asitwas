@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 const LEVELS = [
     { name: 'Rookie', threshold: 100, pointsPerHundredXP: 1 },
@@ -35,76 +35,96 @@ function canInitiateNewTransaction(transactionStatus: string[]) {
 
 export async function POST(req: NextRequest) {
     try {
-        const userData = await req.json()
+        const userData = await req.json();
 
         if (!userData || !userData.id) {
-            return NextResponse.json({ error: 'Invalid user data' }, { status: 400 })
+            return NextResponse.json({ error: 'Invalid user data' }, { status: 400 });
         }
-
-        const select = {
-            telegramId: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            level: true,
-            piAmount: true,
-            transactionStatus: true,
-            introSeen: true,
-            finalpis: true,
-            baseprice: true,
-            istransaction: true,
-            invitedUsers: true,
-            invitedBy: true,
-            points: true
-        }
-
-        // Get inviter ID if present
-        const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
 
         let user = await prisma.user.findUnique({
             where: { telegramId: userData.id },
-            select
-        })
+            select: {
+                telegramId: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                points: true,
+                invitedUsers: true,
+                invitedBy: true,
+                level: true,
+                piAmount: true,
+                transactionStatus: true,
+                introSeen: true,
+                baseprice: true,
+                piaddress: true,
+                istransaction: true,
+            }
+        });
+
+        const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
 
         if (!user) {
-            // Handle new user creation with invite logic
-            const initialData = {
-                telegramId: userData.id,
-                username: userData.username || '',
-                firstName: userData.first_name || '',
-                lastName: userData.last_name || '',
-                level: 1,
-                transactionStatus: [],
-                invitedUsers: [],
-                invitedBy: ''
-            }
-
-            // If user was invited, handle the invitation
             if (inviterId) {
-                const inviter = await prisma.user.findUnique({
+                const inviterInfo = await prisma.user.findUnique({
                     where: { telegramId: inviterId },
-                    select: { username: true }
+                    select: { username: true, firstName: true, lastName: true }
                 });
 
-                if (inviter) {
-                    initialData.invitedBy = `@${inviter.username || inviterId}`;
-
-                    // Update inviter's invited users list
-                    await prisma.user.update({
-                        where: { telegramId: inviterId },
+                if (inviterInfo) {
+                    user = await prisma.user.create({
                         data: {
-                            invitedUsers: {
-                                push: `@${userData.username || userData.id}`
-                            }
+                            telegramId: userData.id,
+                            username: userData.username || '',
+                            firstName: userData.first_name || '',
+                            lastName: userData.last_name || '',
+                            invitedBy: `@${inviterInfo.username || inviterId}`,
+                            isOnline: true,
+                            level: 1,
+                            points: 0,
+                            transactionStatus: []
+                        }
+                    });
+
+                    // Make API call to increase-points route instead of directly updating points
+                    await fetch('/api/increase-points', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            telegramId: inviterId,
+                            invitedUserId: userData.id,
+                            invitedUsername: userData.username
+                        })
+                    });
+                } else {
+                    user = await prisma.user.create({
+                        data: {
+                            telegramId: userData.id,
+                            username: userData.username || '',
+                            firstName: userData.first_name || '',
+                            lastName: userData.last_name || '',
+                            isOnline: true,
+                            currentTime: new Date(),
+                            level: 1,
+                            transactionStatus: []
                         }
                     });
                 }
+            } else {
+                user = await prisma.user.create({
+                    data: {
+                        telegramId: userData.id,
+                        username: userData.username || '',
+                        firstName: userData.first_name || '',
+                        lastName: userData.last_name || '',
+                        isOnline: true,
+                        currentTime: new Date(),
+                        level: 1,
+                        transactionStatus: []
+                    }
+                });
             }
-
-            user = await prisma.user.create({
-                data: initialData,
-                select
-            })
         }
 
         // Handle new transaction initiation
@@ -122,7 +142,6 @@ export async function POST(req: NextRequest) {
                         push: 'processing'
                     }
                 },
-                select
             })
         }
 
@@ -137,7 +156,6 @@ export async function POST(req: NextRequest) {
                     data: { 
                         transactionStatus: newStatuses
                     },
-                    select
                 })
             }
         }
@@ -149,21 +167,30 @@ export async function POST(req: NextRequest) {
                 data: { 
                     level: userData.level
                 },
-                select
             })
+        }
+
+        let inviterInfo = null;
+        if (inviterId) {
+            inviterInfo = await prisma.user.findUnique({
+                where: { telegramId: inviterId },
+                select: { username: true, firstName: true, lastName: true }
+            });
         }
 
         // Calculate profile metrics
         const metrics = calculateProfileMetrics(user.piAmount);
 
-        // Return combined user data and metrics
+        // Return combined response with all data
         return NextResponse.json({
-            ...user,
+            user,
+            inviterInfo,
             ...metrics,
             status: user.transactionStatus
-        })
+        });
+
     } catch (error) {
-        console.error('Error processing user data:', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('Error processing user data:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
