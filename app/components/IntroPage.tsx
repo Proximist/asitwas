@@ -47,7 +47,7 @@ const IntroPage = ({ telegramId }: { telegramId: number }) => {
         },
         body: JSON.stringify({ telegramId }),
       });
-      window.location.href = './invite';
+      window.location.href = '/';
     } catch (error) {
       console.error('Error updating intro seen status:', error);
     }
