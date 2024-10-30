@@ -53,11 +53,6 @@ export async function POST(req: NextRequest) {
                 invitedBy: true,
                 level: true,
                 piAmount: true,
-                transactionStatus: true,
-                introSeen: true,
-                baseprice: true,
-                piaddress: true,
-                istransaction: true,
             }
         });
 
