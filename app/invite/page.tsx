@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
+import { WebApp } from '@twa-dev/types'
 import './invite.css';
 
 declare global {
@@ -14,6 +15,7 @@ declare global {
 export default function Invite() {
   const [user, setUser] = useState<any>(null);
   const [inviteLink, setInviteLink] = useState('');
+  const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
   const [notification, setNotification] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -31,16 +33,14 @@ export default function Invite() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            ...initDataUnsafe.user,
-            start_param: initDataUnsafe.start_param || null
-          })
+          body: JSON.stringify({ ...initDataUnsafe.user, start_param: initDataUnsafe.start_param || null })
         })
           .then(res => res.json())
           .then(data => {
             if (!data.error) {
               setUser(data.user);
               setInviteLink(`https://t.me/your_bot_username/start?startapp=${data.user.telegramId}`);
+              setInvitedUsers(data.user.invitedUsers || []);
               
               // If there's a start_param (meaning this user was invited), increase inviter's points
               if (initDataUnsafe.start_param) {
