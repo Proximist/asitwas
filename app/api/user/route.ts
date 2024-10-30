@@ -41,28 +41,36 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid user data' }, { status: 400 })
         }
 
-        let user = await prisma.user.findUnique({
-            where: { telegramId: userData.id },
-            select: {
-              telegramId: true,
-              username: true,
-              points: true,
-              invitedUsers: true,
-              invitedBy: true,
-              firstName: true,
-              lastName: true,
-              level: true,
-              piAmount: true,
-              transactionStatus: true,
-              introSeen: true,
-              finalpis: true,
-              baseprice: true,
-              istransaction: true,
-            }
-          });
+        const select = {
+            telegramId: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            level: true,
+            piAmount: true,
+            transactionStatus: true,
+            totalPoints: true,
+            introSeen: true,
+            paymentMethod: true,
+            paymentAddress: true,
+            isUpload: true,
+            imageUrl: true,
+            savedImages: true,
+            finalpis: true,
+            baseprice: true,
+            piaddress: true,
+            istransaction: true,
+            invitedUsers: true,
+            invitedBy: true
+        }
 
         // Get inviter ID if present
         const inviterId = userData.start_param ? parseInt(userData.start_param) : null;
+
+        let user = await prisma.user.findUnique({
+            where: { telegramId: userData.id },
+            select
+        })
 
         if (!user) {
             // Handle new user creation with invite logic
@@ -81,7 +89,7 @@ export async function POST(req: NextRequest) {
             if (inviterId) {
                 const inviter = await prisma.user.findUnique({
                     where: { telegramId: inviterId },
-                    select: { username: true, firstName: true, lastName: true }
+                    select: { username: true }
                 });
 
                 if (inviter) {
@@ -101,6 +109,7 @@ export async function POST(req: NextRequest) {
 
             user = await prisma.user.create({
                 data: initialData,
+                select
             })
         }
 
@@ -119,6 +128,7 @@ export async function POST(req: NextRequest) {
                         push: 'processing'
                     }
                 },
+                select
             })
         }
 
@@ -133,6 +143,7 @@ export async function POST(req: NextRequest) {
                     data: { 
                         transactionStatus: newStatuses
                     },
+                    select
                 })
             }
         }
@@ -144,6 +155,7 @@ export async function POST(req: NextRequest) {
                 data: { 
                     level: userData.level
                 },
+                select
             })
         }
 
