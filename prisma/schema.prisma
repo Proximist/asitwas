@@ -13,9 +13,9 @@ model User {
   username       String?
   firstName      String?
   lastName       String?
-  points        Int       @default(0)
-  invitedUsers  String[] @default([])
-  invitedBy     String?  @default("")
+  invitedUsers String[] @default([])
+  invitedBy    String?
+  points       Int      @default(0)
   level          Int       @default(1)
   introSeen      Boolean   @default(false)
   paymentMethod  String[]  @default([])  // Changed to array
@@ -31,17 +31,5 @@ model User {
   transactionStatus String[] @default(["processing"])
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  invitesSent    Invite[] @relation("Inviter") // Invites sent by this user
-  invitesReceived Invite[] @relation("Invitee") // Invites received by this user
-}
 
-model Invite {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId // Unique identifier
-  inviterId  String   // ID of the user who sent the invite
-  inviteeId  String   // ID of the user who was invited
-  createdAt  DateTime @default(now()) // Timestamp of when the invite was created
-
-  // Define relations
-  inviter    User     @relation("Inviter", fields: [inviterId], references: [id])
-  invitee    User     @relation("Invitee", fields: [inviteeId], references: [id])
 }
