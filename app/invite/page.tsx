@@ -164,21 +164,21 @@ export default function InvitePage() {
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <p className="text-2xl font-bold text-[#670773]">{user?.invitedUsers?.length || 0}</p>
+              <p className="text-2xl font-bold text-[#670773]">{inviteData?.invitedUsers?.length || 0}</p>
               <p className="text-gray-600">Friends Invited</p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <p className="text-2xl font-bold text-[#670773]">{user?.points || 0}</p>
+              <p className="text-2xl font-bold text-[#670773]">{inviteData?.points || 0}</p>
               <p className="text-gray-600">Total Points</p>
             </div>
           </div>
 
           {/* Invited Friends List */}
-          {user?.invitedUsers && user.invitedUsers.length > 0 ? (
+          {inviteData?.invitedUsers && inviteData.invitedUsers.length > 0 ? (
             <div>
               <h3 className="text-lg font-bold text-[#670773] mb-3">Invited Friends</h3>
               <div className="space-y-2">
-                {user.invitedUsers.map((username, index) => (
+                {inviteData.invitedUsers.map((username, index) => (
                   <div key={index} className="bg-gray-50 p-3 rounded-lg flex items-center">
                     <i className="fas fa-user-circle text-[#670773] mr-3"></i>
                     <span>{username}</span>
@@ -194,9 +194,9 @@ export default function InvitePage() {
         </div>
 
         {/* Invited By Section */}
-        {user?.invitedBy && (
+        {inviteData?.invitedBy && (
           <div className="bg-white rounded-lg p-4 shadow-md text-center fade-in-up">
-            <p className="text-gray-600">Invited by: <span className="font-bold text-[#670773]">{user.invitedBy}</span></p>
+            <p className="text-gray-600">Invited by: <span className="font-bold text-[#670773]">{inviteData.invitedBy}</span></p>
           </div>
         )}
       </div>
