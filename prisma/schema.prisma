@@ -14,7 +14,7 @@ model User {
   firstName      String?
   lastName       String?
   invitedUsers String[] @default([])
-  invitedBy    String?
+  invitedBy    String?  @default("")
   points       Int      @default(0)
   level          Int       @default(1)
   introSeen      Boolean   @default(false)
