@@ -55,7 +55,6 @@ export default function Invite() {
               setUser(data.user)
               // Update this URL to match your bot's username
               setInviteLink(`http://t.me/miniappw21bot/cdprojekt/start?startapp=${data.user.telegramId}`)
-              setInvitedUsers(data.user.invitedUsers || [])
             }
           })
           .catch(() => {
