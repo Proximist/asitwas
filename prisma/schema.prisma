@@ -15,7 +15,7 @@ model User {
   lastName       String?
   points         Int       @default(0)
   level          Int       @default(1)
-  introSeen      Boolean   @default(false)
+  introSeen      Boolean   @default(true)
   paymentMethod  String[]  @default([])
   paymentAddress String[]  @default([])
   isUpload       Boolean   @default(false)
