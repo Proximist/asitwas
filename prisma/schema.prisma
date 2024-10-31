@@ -13,23 +13,22 @@ model User {
   username       String?
   firstName      String?
   lastName       String?
-  invitedUsers String[] @default([])
-  invitedBy    String?  @default("")
-  points       Int      @default(0)
+  points         Int       @default(0)
   level          Int       @default(1)
   introSeen      Boolean   @default(false)
-  paymentMethod  String[]  @default([])  // Changed to array
-  paymentAddress String[]  @default([])  // Changed to array
+  paymentMethod  String[]  @default([])
+  paymentAddress String[]  @default([])
   isUpload       Boolean   @default(false)
   imageUrl       String?
   savedImages    String[]  @default([])
   piAmount       Int[]     @default([])
   finalpis       Int[]     @default([])
   baseprice      Float     @default(0.15)
-  piaddress      String[]  @default([])   // New field for Pi wallet address
+  piaddress      String[]  @default([])
   istransaction  Boolean   @default(false)
   transactionStatus String[] @default(["processing"])
+  invitedUsers   String[]  @default([])  // New: Array of usernames invited by this user
+  invitedBy      String?   // New: Username of the user who invited this user
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
 }
