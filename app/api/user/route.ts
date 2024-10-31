@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
                     level: 1,
                     transactionStatus: [],
                     invitedUsers: [], // Initialize empty invite arrays
+                    invitedBy: "",
                     points: 0
                 },
                 select
