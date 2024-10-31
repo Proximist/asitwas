@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
             baseprice: true,
             piaddress: true,// New field for Pi wallet address
             istransaction: true,
+            invitedUsers: true, // Include invite-related fields
+            invitedBy: true     // Include invite-related fields
         }
 
         let user = await prisma.user.findUnique({
@@ -76,7 +78,9 @@ export async function POST(req: NextRequest) {
                     firstName: userData.first_name || '',
                     lastName: userData.last_name || '',
                     level: 1,
-                    transactionStatus: []
+                    transactionStatus: [],
+                    invitedUsers: [], // Initialize empty invite arrays
+                    points: 0
                 },
                 select
             })
