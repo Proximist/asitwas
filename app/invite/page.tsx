@@ -5,16 +5,6 @@ import { WebApp } from '@twa-dev/types'
 import Script from 'next/script'
 import Link from 'next/link'
 
-interface User {
-  telegramId: number
-  username: string
-  firstName: string
-  lastName: string
-  points: number
-  invitedUsers: string[]
-  invitedBy: string | null
-}
-
 declare global {
   interface Window {
     Telegram?: {
@@ -23,8 +13,15 @@ declare global {
   }
 }
 
+interface InviteData {
+  telegramId: number
+  points: number
+  invitedUsers: string[]
+  invitedBy: string | null
+}
+
 export default function InvitePage() {
-  const [user, setUser] = useState<User | null>(null)
+  const [inviteData, setInviteData] = useState<InviteData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
@@ -38,25 +35,45 @@ export default function InvitePage() {
       tg.ready()
 
       const initDataUnsafe = tg.initDataUnsafe || {}
+      const startParam = new URLSearchParams(window.location.search).get('startapp')
 
       if (initDataUnsafe.user) {
-        fetch('/api/user', {
+        // First, process the invite if there's a startParam
+        if (startParam) {
+          fetch('/api/invite', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: initDataUnsafe.user.id,
+              inviterId: startParam,
+              action: 'process'
+            }),
+          })
+        }
+
+        // Then fetch the user's invite data
+        fetch('/api/invite', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(initDataUnsafe.user),
+          body: JSON.stringify({
+            userId: initDataUnsafe.user.id,
+            action: 'get'
+          }),
         })
           .then((res) => res.json())
           .then((data) => {
             if (data.error) {
               setError(data.error)
             } else {
-              setUser(data)
+              setInviteData(data.inviteData)
             }
           })
           .catch((err) => {
-            setError('Failed to fetch user data')
+            setError('Failed to fetch invite data')
           })
           .finally(() => {
             setLoading(false)
@@ -72,9 +89,9 @@ export default function InvitePage() {
   }, [])
 
   const handleCopyInviteLink = async () => {
-    if (!user?.telegramId) return
+    if (!inviteData?.telegramId) return
 
-    const inviteLink = `http://t.me/miniappw21bot/cdprojekt/start?startapp=${user.telegramId}`
+    const inviteLink = `http://t.me/miniappw21bot/cdprojekt/start?startapp=${inviteData.telegramId}`
     
     try {
       await navigator.clipboard.writeText(inviteLink)
