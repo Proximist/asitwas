@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -59,10 +58,10 @@ export async function POST(req: NextRequest) {
             savedImages: true,
             finalpis: true,
             baseprice: true,
-            piaddress: true,// New field for Pi wallet address
+            piaddress: true,
             istransaction: true,
-            invitedUsers: true, // Include invite-related fields
-            invitedBy: true     // Include invite-related fields
+            invitedUsers: true,
+            invitedBy: true,
         }
 
         let user = await prisma.user.findUnique({
@@ -79,12 +78,36 @@ export async function POST(req: NextRequest) {
                     lastName: userData.last_name || '',
                     level: 1,
                     transactionStatus: [],
-                    invitedUsers: [], // Initialize empty invite arrays
-                    invitedBy: "",
-                    points: 0
+                    points: 0,
+                    invitedBy: userData.invitedBy || null,
+                    invitedUsers: []
                 },
                 select
             })
+        }
+
+        // Handle invites
+        if (userData.startParam) {
+            const inviter = await prisma.user.findUnique({
+                where: { telegramId: parseInt(userData.startParam) },
+                select: { username: true }
+            })
+
+            if (inviter && !user?.invitedBy) {
+                // Update inviter's points and invited users list
+                await prisma.user.update({
+                    where: { telegramId: parseInt(userData.startParam) },
+                    data: {
+                        points: { increment: 2500 },
+                        invitedUsers: {
+                            push: userData.username || `User${userData.id}`
+                        }
+                    }
+                })
+
+                // Set the invitedBy field for the new user
+                userData.invitedBy = inviter.username || `User${userData.startParam}`
+            }
         }
 
         // Handle new transaction initiation
